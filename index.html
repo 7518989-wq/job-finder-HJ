@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>자동 채용 공고 찾기</title>
+<style>
+:root{font-family:system-ui,-apple-system,"맑은 고딕",sans-serif;color:#182839;background:#f4f7fa;font-size:16px;line-height:1.6;color-scheme:light}*{box-sizing:border-box}body{margin:0}main{max-width:1080px;margin:auto;padding:40px 20px 64px}h1{font-size:clamp(28px,5vw,40px);line-height:1.3;margin:0 0 16px;letter-spacing:-.04em}p{margin:0}.notice{color:#334e68;padding:16px 20px;background:#e7f0f8;border-radius:12px}.intro{margin-top:14px;color:#526577}.filters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:18px;background:white;border:1px solid #dce4eb;border-radius:18px;padding:24px;margin:28px 0 20px}label{display:block;font-weight:650}input,select,button,a{font:inherit}input,select{margin-top:8px;width:100%;min-height:48px;border:1px solid #aebdcb;border-radius:9px;padding:10px 12px;background:#fff;color:#182839}input:focus-visible,select:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #3983cf;outline-offset:3px}.toolbar{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:20px;color:#526577}.toolbar strong{color:#182839}button{min-height:44px;padding:8px 14px;border:1px solid #aebdcb;background:white;border-radius:8px;cursor:pointer}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.card{background:white;border:1px solid #dce4eb;border-radius:18px;padding:26px;overflow-wrap:anywhere;box-shadow:0 4px 18px #1c385008}.card.expired{background:#edf0f3;color:#626e79;opacity:.72}.top{display:flex;align-items:center;justify-content:space-between;gap:12px}.company{font-weight:700;color:#315674}.badge{display:inline-block;white-space:nowrap;background:#fff0df;color:#924700;padding:4px 12px;border-radius:30px;font-weight:700}.expired .badge{background:#dde2e7;color:#46515c}h2{font-size:23px;line-height:1.45;letter-spacing:-.025em;margin:18px 0 22px}dl{display:grid;grid-template-columns:90px minmax(0,1fr);gap:10px 12px;margin:0}dt{color:#607182}dd{margin:0}.card footer{border-top:1px solid #e3e9ef;margin-top:24px;padding-top:18px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:space-between}.checked{color:#607182}.link{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:10px 20px;background:#124f80;color:#fff;text-decoration:none;border-radius:10px;font-weight:650}.link:hover{background:#093a62}.link:disabled{background:#dce2e8;color:#586471;cursor:not-allowed}.empty{grid-column:1/-1;text-align:center;padding:48px 16px;border:1px dashed #aebdcb;border-radius:16px;color:#526577}[hidden]{display:none!important}.clock{margin-top:24px;color:#607182} @media(max-width:720px){main{padding:28px 16px 48px}.filters{grid-template-columns:1fr;padding:20px;gap:14px}.grid{grid-template-columns:1fr}.card{padding:22px}.toolbar{align-items:flex-start}}
+</style>
+</head>
+<body>
+<main>
+<header><h1>자동 채용 공고 찾기</h1><p class="notice">확인일 기준 정보입니다. 지원 전 원문을 꼭 확인하세요.</p><p class="intro">제공된 공고에서 검색하고, 마감이 가까운 순서로 확인하세요.</p></header>
+<form class="filters" id="filters" role="search">
+<label for="keyword">키워드 검색<input id="keyword" type="search" placeholder="회사, 공고 제목, 직무 검색" autocomplete="off"></label>
+<label for="type">지원 구분<select id="type"><option value="">전체</option><option>신입</option><option>경력</option></select></label>
+<label for="location">근무지<select id="location"><option value="">전체</option></select></label>
+</form>
+<div class="toolbar"><p id="count" role="status" aria-live="polite"></p><p>마감 임박순 · 마감 공고는 맨 아래</p><button id="reset" type="button">필터 초기화</button></div>
+<section class="grid" id="jobs" aria-label="채용 공고 목록"></section>
+<p class="clock" id="clock"></p>
+<noscript>공고를 표시하려면 JavaScript를 활성화해 주세요.</noscript>
+</main>
+<script id="job-data" type="application/json">
+[
+  {
+    "공고ID": "수소충전소 안전관리",
+    "회사": "현대자동차",
+    "공고 제목": "[계약직] 수소충전소 안전관리",
+    "직무": "수소충전소 안전관리",
+    "근무지": "남양연구소",
+    "지원 구분": "미기재",
+    "고용 형태": "계약직",
+    "마감일": "2026-11-02 23:59",
+    "확인일": "2026-11-02",
+    "원문 URL": "https://talent.hyundai.com/apply/applyView.hc?recuYy=2026&recuType=N5&recuCls=230",
+    "출처 구분": "기업 채용 홈페이지"
+  }
+]
+</script>
+<script>
+'use strict';
+const DAY=86400000, KST=9*3600000;
+const data=JSON.parse(document.getElementById('job-data').textContent).flat(Infinity);
+const keyword=document.getElementById('keyword'),type=document.getElementById('type'),locationFilter=document.getElementById('location'),jobs=document.getElementById('jobs');
+// Explicit numeric parsing avoids Safari's ambiguous date-string parsing.
+function deadline(value){
+ const match=/^(\d{4})-(\d{2})-(\d{2})(?: (\d{2}):(\d{2}))?$/.exec(value||'');
+ if(!match)return null;
+ const [,y,m,d,h='23',min='59']=match;
+ const utc=Date.UTC(+y,+m-1,+d,+h,+min);
+ const check=new Date(utc);
+ if(check.getUTCFullYear()!==+y||check.getUTCMonth()!==+m-1||check.getUTCDate()!==+d||+h>23||+min>59)return null;
+ return utc-KST;
+}
+function status(job,now){const end=deadline(job['마감일']);return {end,expired:end!==null&&now>=end+60000,days:end===null?null:Math.floor((end+KST)/DAY)-Math.floor((now+KST)/DAY)};}
+function sorted(list,now){return list.map((job,index)=>({job,index,...status(job,now)})).sort((a,b)=>Number(a.expired)-Number(b.expired)||(a.end??Infinity)-(b.end??Infinity)||a.index-b.index);}
+function text(tag,value,className){const el=document.createElement(tag);el.textContent=value??'미기재';if(className)el.className=className;return el;}
+function safeURL(value){try{const url=new URL(value);return ['https:','http:'].includes(url.protocol)?url.href:null;}catch{return null;}}
+function matches(job,q,t,l){return (!q||Object.values(job).join(' ').toLocaleLowerCase('ko-KR').includes(q))&&(!t||(t==='신입'||t==='경력'?String(job['지원 구분']).includes(t):job['지원 구분']===t))&&(!l||job['근무지']===l);}
+function card(item){
+ const {job,expired,days}=item,article=document.createElement('article');article.className='card'+(expired?' expired':'');
+ const top=text('div','','top');top.append(text('p',job['회사'],'company'),text('span',expired?'마감':days===null?'마감일 미기재':days===0?'D-day':`D-${days}`,'badge'));article.append(top,text('h2',job['공고 제목']));
+ const details=document.createElement('dl');['직무','근무지','지원 구분','고용 형태','마감일','출처 구분'].forEach(key=>details.append(text('dt',key),text('dd',job[key])));article.append(details);
+ const footer=document.createElement('footer');footer.append(text('p',`확인일 ${job['확인일']??'미기재'}`,'checked'));
+ const url=safeURL(job['원문 URL']);if(url){const link=text('a','원문 보기 ↗','link');link.href=url;link.target='_blank';link.rel='noopener noreferrer';link.setAttribute('aria-label',`${job['공고 제목']} 원문 보기 (새 탭)`);footer.append(link);}else{const button=text('button','원문 보기','link');button.type='button';button.disabled=true;footer.append(button);}article.append(footer);return article;
+}
+function render(){
+ const now=Date.now(),q=keyword.value.trim().toLocaleLowerCase('ko-KR');
+ const results=sorted(data.filter(job=>matches(job,q,type.value,locationFilter.value)),now);
+ jobs.replaceChildren(...results.map(card));if(!results.length)jobs.append(text('p','조건에 맞는 공고가 없습니다. 검색어나 필터를 변경해 주세요.','empty'));
+ const count=`전체 ${data.length}건 중 ${results.length}건`;
+ if(document.getElementById('count').textContent!==count)document.getElementById('count').textContent=count;
+ const today=new Date(now+KST).toISOString().slice(0,10);document.getElementById('clock').textContent=`오늘 ${today} · 한국 시간(KST) 기준`;
+}
+for(const value of [...new Set(data.map(job=>job['근무지']??'미기재'))])locationFilter.add(new Option(value,value));
+for(const value of [...new Set(data.map(job=>job['지원 구분']??'미기재'))])if(![...type.options].some(option=>option.value===value))type.add(new Option(value,value));
+document.getElementById('filters').addEventListener('submit',event=>event.preventDefault());keyword.addEventListener('input',render);type.addEventListener('change',render);locationFilter.addEventListener('change',render);
+document.getElementById('reset').addEventListener('click',()=>{document.getElementById('filters').reset();render();});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)render();});window.addEventListener('pageshow',render);setInterval(render,15000);render();
+</script>
+</body>
+</html>
+
